@@ -1,0 +1,19 @@
+# Render deployment configuration
+# Deploy with: render.yaml
+
+services:
+  # Backend API service
+  - type: web
+    name: harold-hub-backend
+    env: node
+    plan: free
+    buildCommand: npm install
+    startCommand: npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 3000
+
+  # Static frontend (optional - if you want to keep the static site separate)
+  # Or serve the static files from the backend via express.static()
