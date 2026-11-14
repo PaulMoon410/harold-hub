@@ -18,6 +18,14 @@ A static portal for Harold that can be deployed on Render.
 
 ## Deployment on Render
 
+This repository is the portal/Hub, not the running Harold model or the VS Code
+consensus pool. The model server is maintained in `PaulMoon410/peake_ai` on
+`lubuntu`, port 10000. Its lightweight Ollama-compatible interface uses the
+base URL `https://lubuntu.tail239f3d.ts.net/ollama` and model `harold`; clients
+must send Harold's configured bearer API key. No Ollama installation or model
+download is needed. See that repository's `OLLAMA_ADAPTER.md` for supported
+requests and limitations.
+
 ### Option 1: Static Site (Recommended)
 
 1. Create a new **Static Site** in Render
