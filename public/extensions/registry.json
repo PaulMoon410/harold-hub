@@ -1,4 +1,69 @@
 {
-  "extensions": [],
-  "instructions": "Add your VS Code extension here. Each entry needs: name, type (vscode-extension), description, and a setup command or config."
+  "extensions": [
+    {
+      "id": "dbaeumer.vscode-eslint",
+      "name": "ESLint",
+      "type": "vscode-extension",
+      "description": "Integrates ESLint JavaScript into VS Code for catching errors and enforcing style.",
+      "publisher": "dbaeumer",
+      "setup": "code --install-extension dbaeumer.vscode-eslint"
+    },
+    {
+      "id": "esbenp.prettier-vscode",
+      "name": "Prettier",
+      "type": "vscode-extension",
+      "description": "Code formatter using prettier for consistent styling across the pool apps.",
+      "publisher": "esbenp",
+      "setup": "code --install-extension esbenp.prettier-vscode"
+    },
+    {
+      "id": "GitHub.copilot",
+      "name": "GitHub Copilot",
+      "type": "vscode-extension",
+      "description": "AI pair programmer that suggests code and chat inside the editor.",
+      "publisher": "GitHub",
+      "setup": "code --install-extension GitHub.copilot"
+    },
+    {
+      "id": "rangav.vscode-thunder-client",
+      "name": "Thunder Client",
+      "type": "vscode-extension",
+      "description": "Lightweight REST API client for testing endpoints like /api/chat and /api/webhook.",
+      "publisher": "rangav",
+      "setup": "code --install-extension rangav.vscode-thunder-client"
+    },
+    {
+      "id": "Huachao.vscode-restclient",
+      "name": "REST Client",
+      "type": "vscode-extension",
+      "description": "Send HTTP requests and view responses directly in the editor.",
+      "publisher": "Huachao",
+      "setup": "code --install-extension Huachao.vscode-restclient"
+    },
+    {
+      "id": "ms-azuretools.vscode-docker",
+      "name": "Docker",
+      "type": "vscode-extension",
+      "description": "Makes it easy to create, manage, and debug containerized applications.",
+      "publisher": "ms-azuretools",
+      "setup": "code --install-extension ms-azuretools.vscode-docker"
+    },
+    {
+      "id": "eamodio.gitlens",
+      "name": "GitLens",
+      "type": "vscode-extension",
+      "description": "Supercharges Git capabilities with blame annotations and history insights.",
+      "publisher": "eamodio",
+      "setup": "code --install-extension eamodio.gitlens"
+    },
+    {
+      "id": "usernamehw.errorlens",
+      "name": "Error Lens",
+      "type": "vscode-extension",
+      "description": "Amplifies highlighting of errors, warnings and other diagnostics in code.",
+      "publisher": "usernamehw",
+      "setup": "code --install-extension usernamehw.errorlens"
+    }
+  ],
+  "instructions": "Add your VS Code extension here. Each entry needs: id, name, type (vscode-extension), description, publisher, and a setup command."
 }
