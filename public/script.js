@@ -1,4 +1,4 @@
-// Harold Chat Script - Base44 Backend Edition with Extensions Support
+// Harold Chat Script - OpenAI-compatible chat completion with Extensions Support
 
 class HaroldChat {
   constructor() {
@@ -7,8 +7,9 @@ class HaroldChat {
     this.messageInput = document.getElementById('message-input');
     this.sendBtn = document.querySelector('.send-btn');
 
-    // Base44 API URL - update with your deployed Base44 app URL
-    this.base44ApiUrl = 'https://app.base44.com/api/functions/chat';
+    // Chat completion API (OpenAI-compatible)
+    this.apiBaseUrl = 'https://lubuntu.tail239f3d.ts.net/v1';
+    this.model = 'harold';
 
     this.sessionId = this.generateSessionId();
     this.messageHistory = [];
@@ -60,15 +61,21 @@ class HaroldChat {
   }
 
   async sendMessageToBase44(message, history) {
-    const response = await fetch(this.base44ApiUrl, {
+    const messages = [
+      { role: 'system', content: 'You are Harold, a helpful AI assistant.' },
+      ...history,
+      { role: 'user', content: message },
+    ];
+
+    const response = await fetch(`${this.apiBaseUrl}/chat/completions`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        message,
-        history,
-        sessionId: this.sessionId,
+        model: this.model,
+        messages,
+        stream: false,
       }),
     });
 
@@ -77,7 +84,7 @@ class HaroldChat {
     }
 
     const data = await response.json();
-    return data.response;
+    return data.choices?.[0]?.message?.content ?? '';
   }
 
   // ---- Extensions ----
