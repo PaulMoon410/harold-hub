@@ -1,4 +1,4 @@
-// Harold Portal Chat Script - Base44 Backend Edition
+// Harold Chat Script - Base44 Backend Edition with Extensions Support
 
 class HaroldChat {
   constructor() {
@@ -12,6 +12,10 @@ class HaroldChat {
 
     this.sessionId = this.generateSessionId();
     this.messageHistory = [];
+
+    // Extensions loaded from the pool registry
+    this.extensions = [];
+    this.loadExtensions();
 
     this.init();
   }
@@ -74,6 +78,40 @@ class HaroldChat {
 
     const data = await response.json();
     return data.response;
+  }
+
+  // ---- Extensions ----
+
+  async loadExtensions() {
+    try {
+      const res = await fetch('/extensions/registry.json');
+      if (!res.ok) return;
+      const data = await res.json();
+      this.extensions = Array.isArray(data.extensions) ? data.extensions : [];
+      this.renderExtensions();
+    } catch (e) {
+      // No registry yet, ignore
+    }
+  }
+
+  renderExtensions() {
+    const container = document.getElementById('extensions-list');
+    if (!container) return;
+    container.innerHTML = '';
+    if (this.extensions.length === 0) {
+      container.innerHTML = '<p class="ext-empty">No extensions registered yet.</p>';
+      return;
+    }
+    this.extensions.forEach((ext) => {
+      const item = document.createElement('div');
+      item.className = 'ext-item';
+      item.innerHTML = `
+        <strong>${escapeHtml(ext.name)}</strong>
+        <span>${escapeHtml(ext.description || '')}</span>
+        <small>by ${escapeHtml(ext.publisher || 'unknown')}</small>
+      `;
+      container.appendChild(item);
+    });
   }
 
   addMessage(text, sender) {
@@ -144,6 +182,14 @@ class HaroldChat {
     const now = new Date();
     return now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   }
+}
+
+function escapeHtml(str) {
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
 }
 
 document.addEventListener('DOMContentLoaded', () => {

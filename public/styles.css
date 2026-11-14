@@ -214,6 +214,57 @@ body {
     font-size: 13px;
 }
 
+.extensions-panel {
+    margin-top: 16px;
+    padding-top: 16px;
+    border-top: 1px solid var(--border-color);
+}
+
+.extensions-panel h2 {
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #6b7280;
+    margin: 0 0 10px;
+}
+
+#extensions-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    max-height: 120px;
+    overflow-y: auto;
+}
+
+.ext-item {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding: 8px 12px;
+    background-color: #f9fafb;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    font-size: 13px;
+}
+
+.ext-item strong {
+    color: #111827;
+}
+
+.ext-item span {
+    color: #374151;
+}
+
+.ext-item small {
+    color: #6b7280;
+}
+
+.ext-empty {
+    color: #9ca3af;
+    font-size: 13px;
+    margin: 0;
+}
+
 @media (max-width: 500px) {
     .portal-container {
         padding: 20px;

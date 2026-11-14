@@ -1,0 +1,4 @@
+{
+  "extensions": [],
+  "instructions": "Add your VS Code extension here. Each entry needs: name, type (vscode-extension), description, and a setup command or config."
+}

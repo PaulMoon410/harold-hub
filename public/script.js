@@ -1,4 +1,4 @@
-// Harold Portal Chat Script - Full Stack Edition
+// Harold Chat Script - Base44 Backend Edition with Extensions Support
 
 class HaroldChat {
   constructor() {
@@ -7,13 +7,15 @@ class HaroldChat {
     this.messageInput = document.getElementById('message-input');
     this.sendBtn = document.querySelector('.send-btn');
 
-    // API URLs - update for production
-    this.chatApiUrl = '/api/chat';
-    this.ftpApiUrl = '/api/ftp';
+    // Base44 API URL - update with your deployed Base44 app URL
+    this.base44ApiUrl = 'https://app.base44.com/api/functions/chat';
 
-    this.socket = null;
     this.sessionId = this.generateSessionId();
     this.messageHistory = [];
+
+    // Extensions loaded from the pool registry
+    this.extensions = [];
+    this.loadExtensions();
 
     this.init();
   }
@@ -21,70 +23,11 @@ class HaroldChat {
   init() {
     this.chatForm.addEventListener('submit', (e) => this.handleChatSubmit(e));
     this.messageInput.addEventListener('input', () => this.updateSendButton());
-
-    // Connect WebSocket for real-time events
-    this.connectWebSocket();
-
-    // Focus on input
     this.messageInput.focus();
   }
 
   generateSessionId() {
     return 'session_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
-  }
-
-  connectWebSocket() {
-    if (typeof io !== 'undefined') {
-      this.socket = io();
-
-      this.socket.on('harold-event', (event) => {
-        this.handleRealtimeEvent(event);
-      });
-
-      this.socket.on('connect', () => {
-        this.socket.emit('join', this.sessionId);
-      });
-    }
-  }
-
-  handleRealtimeEvent(event) {
-    const { event: eventType, data, timestamp } = event;
-
-    // Add system message about the event
-    this.addSystemMessage(
-      `[System] ${eventType}: ${JSON.stringify(data)}`
-    );
-  }
-
-  addSystemMessage(text) {
-    const messageDiv = document.createElement('div');
-    messageDiv.className = 'message bot-message';
-
-    const avatar = document.createElement('div');
-    avatar.className = 'avatar';
-    avatar.textContent = 'S';
-
-    const contentDiv = document.createElement('div');
-    contentDiv.className = 'message-content';
-
-    const bubbleDiv = document.createElement('div');
-    bubbleDiv.className = 'message-bubble';
-    bubbleDiv.style.background = '#fef3c7';
-    bubbleDiv.style.borderColor = '#f59e0b';
-    bubbleDiv.textContent = text;
-
-    const timeDiv = document.createElement('div');
-    timeDiv.className = 'message-time';
-    timeDiv.textContent = this.getCurrentTime();
-
-    contentDiv.appendChild(bubbleDiv);
-    contentDiv.appendChild(timeDiv);
-
-    messageDiv.appendChild(avatar);
-    messageDiv.appendChild(contentDiv);
-
-    this.messages.appendChild(messageDiv);
-    this.scrollToBottom();
   }
 
   updateSendButton() {
@@ -97,41 +40,36 @@ class HaroldChat {
     const message = this.messageInput.value.trim();
     if (!message) return;
 
-    // Add user message
     this.addMessage(message, 'user');
     this.messageHistory.push({ role: 'user', content: message });
-
-    // Clear input
     this.messageInput.value = '';
     this.updateSendButton();
 
-    // Show typing indicator
     this.showTyping();
 
     try {
-      // Send to backend
-      const response = await this.sendMessageToBackend(message, this.messageHistory);
-
-      // Hide typing indicator
+      const response = await this.sendMessageToBase44(message, this.messageHistory);
       this.hideTyping();
-
-      // Add bot response
       this.addMessage(response, 'bot');
       this.messageHistory.push({ role: 'assistant', content: response });
     } catch (error) {
-      console.error('Error sending message:', error);
+      console.error('Error:', error);
       this.hideTyping();
       this.addMessage('Sorry, I encountered an error. Please try again.', 'bot');
     }
   }
 
-  async sendMessageToBackend(message, history) {
-    const response = await fetch(this.chatApiUrl, {
+  async sendMessageToBase44(message, history) {
+    const response = await fetch(this.base44ApiUrl, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ message, history, sessionId: this.sessionId }),
+      body: JSON.stringify({
+        message,
+        history,
+        sessionId: this.sessionId,
+      }),
     });
 
     if (!response.ok) {
@@ -142,26 +80,38 @@ class HaroldChat {
     return data.response;
   }
 
-  async loadFiles() {
+  // ---- Extensions ----
+
+  async loadExtensions() {
     try {
-      const response = await fetch(this.ftpApiUrl + '/files');
-      const data = await response.json();
-      return data.files || [];
-    } catch (error) {
-      console.error('Error loading files:', error);
-      return [];
+      const res = await fetch('/extensions/registry.json');
+      if (!res.ok) return;
+      const data = await res.json();
+      this.extensions = Array.isArray(data.extensions) ? data.extensions : [];
+      this.renderExtensions();
+    } catch (e) {
+      // No registry yet, ignore
     }
   }
 
-  async searchFiles(pattern) {
-    try {
-      const response = await fetch(this.ftpApiUrl + '/search?pattern=' + encodeURIComponent(pattern));
-      const data = await response.json();
-      return data.files || [];
-    } catch (error) {
-      console.error('Error searching files:', error);
-      return [];
+  renderExtensions() {
+    const container = document.getElementById('extensions-list');
+    if (!container) return;
+    container.innerHTML = '';
+    if (this.extensions.length === 0) {
+      container.innerHTML = '<p class="ext-empty">No extensions registered yet.</p>';
+      return;
     }
+    this.extensions.forEach((ext) => {
+      const item = document.createElement('div');
+      item.className = 'ext-item';
+      item.innerHTML = `
+        <strong>${escapeHtml(ext.name)}</strong>
+        <span>${escapeHtml(ext.description || '')}</span>
+        <small>by ${escapeHtml(ext.publisher || 'unknown')}</small>
+      `;
+      container.appendChild(item);
+    });
   }
 
   addMessage(text, sender) {
@@ -234,7 +184,14 @@ class HaroldChat {
   }
 }
 
-// Initialize chat when page loads
+function escapeHtml(str) {
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
 document.addEventListener('DOMContentLoaded', () => {
   new HaroldChat();
 });
