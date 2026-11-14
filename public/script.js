@@ -25,6 +25,75 @@ class HaroldChat {
     this.chatForm.addEventListener('submit', (e) => this.handleChatSubmit(e));
     this.messageInput.addEventListener('input', () => this.updateSendButton());
     this.messageInput.focus();
+    this.initTranslate();
+    this.checkOllama();
+  }
+
+  // ---- Ollama connection check ----
+
+  async checkOllama() {
+    const statusEl = document.getElementById('ollama-status');
+    if (!statusEl) return;
+    try {
+      const resp = await fetch('/api/ollama/status', { method: 'GET' });
+      const data = await resp.json();
+      if (data.connected) {
+        statusEl.textContent = `Ollama: connected (${data.models.length} model(s))`;
+        statusEl.style.color = '#16a34a';
+      } else {
+        statusEl.textContent = 'Ollama: not connected';
+        statusEl.style.color = '#dc2626';
+      }
+    } catch (e) {
+      statusEl.textContent = 'Ollama: check failed';
+      statusEl.style.color = '#dc2626';
+    }
+  }
+
+  // ---- Translation ----
+
+  initTranslate() {
+    const input = document.getElementById('translate-input');
+    const btn = document.getElementById('translate-btn');
+    const status = document.getElementById('translate-status');
+    if (!input || !btn) return;
+
+    const doTranslate = async () => {
+      const text = input.value.trim();
+      if (!text) {
+        status.textContent = 'Enter text first.';
+        return;
+      }
+      const target = document.getElementById('translate-target').value;
+      btn.disabled = true;
+      status.textContent = 'Translating…';
+      try {
+        const resp = await fetch('/api/translate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ text, targetLang: target }),
+        });
+        if (!resp.ok) {
+          const err = await resp.json().catch(() => ({}));
+          throw new Error(err.error || `HTTP ${resp.status}`);
+        }
+        const data = await resp.json();
+        input.value = data.translation;
+        status.textContent = `→ ${target}`;
+      } catch (e) {
+        status.textContent = e.message || 'Translation failed';
+      } finally {
+        btn.disabled = false;
+      }
+    };
+
+    btn.addEventListener('click', doTranslate);
+    input.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        doTranslate();
+      }
+    });
   }
 
   generateSessionId() {

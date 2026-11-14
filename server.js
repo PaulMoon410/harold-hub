@@ -67,6 +67,84 @@ app.post('/api/webhook', (req, res) => {
   res.json({ success: true });
 });
 
+// Ollama connection check (proxy to the local Ollama instance)
+app.get('/api/ollama/status', async (req, res) => {
+  const targets = [
+    process.env.OLLAMA_BASE_URL,
+    process.env.OLLAMA_URL,
+    'http://127.0.0.1:11434',
+    'http://localhost:11434',
+  ].filter(Boolean);
+
+  for (const base of targets) {
+    try {
+      const ctrl = new AbortController();
+      const timer = setTimeout(() => ctrl.abort(), 5000);
+      const resp = await fetch(`${base.replace(/\/$/, '')}/api/tags`, { signal: ctrl.signal });
+      clearTimeout(timer);
+      if (resp.ok) {
+        const data = await resp.json();
+        return res.json({
+          connected: true,
+          url: base,
+          models: (data.models || []).map((m) => m.name || m.model || m.id),
+        });
+      }
+    } catch (err) {
+      // try next target
+    }
+  }
+
+  res.json({ connected: false, targets });
+});
+
+// Translation endpoint — uses the chat API to translate a message
+app.post('/api/translate', async (req, res) => {
+  try {
+    const { text, targetLang, sourceLang } = req.body;
+    if (!text) {
+      return res.status(400).json({ error: 'Text is required' });
+    }
+
+    const target = (targetLang || 'en').trim();
+    const source = (sourceLang || 'auto').trim();
+
+    const systemPrompt = `You are a professional translator. Translate the user's text from ${source} to ${target}. Return ONLY the translated text, with no explanation, no quotes, and no prefixes.`;
+
+    const response = await translateViaChat(text, systemPrompt);
+    res.json({ translation: response, targetLang: target, sourceLang: source });
+  } catch (error) {
+    console.error('Translate API error:', error);
+    res.status(500).json({ error: error.message || 'Translation failed' });
+  }
+});
+
+async function translateViaChat(text, systemPrompt) {
+  const baseUrl = process.env.CHAT_API_BASE_URL || `http://127.0.0.1:${PORT}`;
+  const chatUrl = `${baseUrl.replace(/\/$/, '')}/api/chat`;
+  const payload = {
+    message: text,
+    history: [],
+    sessionId: 'translate',
+    systemPrompt,
+  };
+
+  try {
+    const resp = await fetch(chatUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    if (!resp.ok) {
+      throw new Error(`Chat API returned HTTP ${resp.status}`);
+    }
+    const data = await resp.json();
+    return (data.response || '').trim();
+  } catch (err) {
+    throw new Error(`Translation backend unavailable: ${err.message}`);
+  }
+}
+
 // Health check
 app.get('/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
